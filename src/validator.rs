@@ -338,8 +338,6 @@ impl ArchitectureValidator {
 mod tests {
     use super::*;
     use crate::pattern::{CodePattern, FilePattern};
-    use std::fs;
-    use tempfile::TempDir;
 
     fn create_test_file_pattern(path: &str) -> FilePattern {
         FilePattern {
