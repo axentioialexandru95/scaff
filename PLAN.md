@@ -39,12 +39,12 @@ tree-sitter-css = "0.23.1"
 
 
 ## Phase 7: TEST
-- [ ] Add tests for our functionality 
+- [x] Add tests for our functionality 
 
-## Phase 8: Documentation & Community
-- [ ] Expand README with usage examples and contribution guidelines
-- [ ] Document scaff format and template usage
-- [ ] Plan for community scaff registry (future)
+## Phase 8: Documentation & Community ✅
+- [x] Expand README with usage examples and contribution guidelines
+- [x] Document scaff format and template usage
+- [x] Plan for community scaff registry (future)
 
 ---
 
