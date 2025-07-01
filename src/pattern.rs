@@ -27,6 +27,67 @@ pub struct ScaffDirectory {
     pub patterns: Vec<CodePattern>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScaffConfig {
+    pub default_scaff: Option<String>,
+}
+
+impl ScaffConfig {
+    pub fn new() -> Self {
+        ScaffConfig {
+            default_scaff: None,
+        }
+    }
+
+    pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
+        let config_path = Path::new("scaffs").join("config.json");
+        
+        if !config_path.exists() {
+            return Ok(Self::new());
+        }
+
+        let content = fs::read_to_string(&config_path)?;
+        let config: ScaffConfig = serde_json::from_str(&content)?;
+        Ok(config)
+    }
+
+    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let scaffs_dir = Path::new("scaffs");
+        if !scaffs_dir.exists() {
+            fs::create_dir_all(scaffs_dir)?;
+        }
+
+        let config_path = scaffs_dir.join("config.json");
+        let json_content = serde_json::to_string_pretty(self)?;
+        fs::write(&config_path, json_content)?;
+        Ok(())
+    }
+
+    pub fn set_default_scaff(&mut self, scaff_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+        // Verify the scaff exists
+        let patterns = ScaffDirectory::load_patterns()?;
+        if !patterns.iter().any(|p| p.name == scaff_name) {
+            return Err(format!("Scaff '{}' not found", scaff_name).into());
+        }
+
+        self.default_scaff = Some(scaff_name.to_string());
+        self.save()?;
+        info!("Set default scaff to '{}'", scaff_name);
+        Ok(())
+    }
+
+    pub fn get_default_scaff(&self) -> Option<&String> {
+        self.default_scaff.as_ref()
+    }
+
+    pub fn clear_default_scaff(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.default_scaff = None;
+        self.save()?;
+        info!("Cleared default scaff");
+        Ok(())
+    }
+}
+
 impl ScaffDirectory {
     pub fn new() -> Self {
         ScaffDirectory {
@@ -69,7 +130,7 @@ impl ScaffDirectory {
             let entry = entry?;
             let path = entry.path();
 
-            if path.extension().and_then(|s| s.to_str()) == Some("json") {
+            if path.extension().and_then(|s| s.to_str()) == Some("json") && path.file_name() != Some(std::ffi::OsStr::new("config.json")) {
                 match fs::read_to_string(&path) {
                     Ok(content) => match serde_json::from_str::<CodePattern>(&content) {
                         Ok(pattern) => {
@@ -94,15 +155,21 @@ impl ScaffDirectory {
         let patterns = Self::load_patterns()?;
 
         if patterns.is_empty() {
-            println!("No scaffs found. Use 'scaff save <name>' to save patterns.");
+            println!("No scaffs found. Use 'scaff save <n>' to save patterns.");
             return Ok(());
         }
+
+        let config = ScaffConfig::load()?;
+        let default_scaff = config.get_default_scaff();
 
         println!("\nAvailable Scaffs:");
         println!("{:-<50}", "");
 
         for pattern in patterns {
-            println!("📋 {} ({})", pattern.name, pattern.language);
+            let is_default = default_scaff.map_or(false, |default| default == &pattern.name);
+            let default_indicator = if is_default { " ⭐ [DEFAULT]" } else { "" };
+            
+            println!("📋 {}{} ({})", pattern.name, default_indicator, pattern.language);
             println!("   {}", pattern.description);
             println!("   Files: {}", pattern.files.len());
 
@@ -117,6 +184,12 @@ impl ScaffDirectory {
             println!("   Items: {}", total_items);
             println!("   Created: {}", pattern.created_at);
             println!();
+        }
+
+        if let Some(default) = default_scaff {
+            println!("💡 Default scaff: {}", default);
+        } else {
+            println!("💡 No default scaff set. Use 'scaff default set <scaff-name>' to set one.");
         }
 
         Ok(())
@@ -294,6 +367,70 @@ mod tests {
 
         let patterns = ScaffDirectory::load_patterns()?;
         assert!(patterns.is_empty()); // Should skip invalid files
+
+        std::env::set_current_dir(original_dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_scaff_config_new() {
+        let config = ScaffConfig::new();
+        assert!(config.default_scaff.is_none());
+    }
+
+    #[test]
+    fn test_scaff_config_save_and_load() -> Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = TempDir::new()?;
+        let original_dir = std::env::current_dir()?;
+        std::env::set_current_dir(temp_dir.path())?;
+
+        // Create a pattern first
+        let pattern = create_test_pattern();
+        let scaff_dir = ScaffDirectory::new();
+        scaff_dir.save_pattern(&pattern)?;
+
+        // Test config operations
+        let mut config = ScaffConfig::new();
+        config.set_default_scaff("test_pattern")?;
+
+        let loaded_config = ScaffConfig::load()?;
+        assert_eq!(loaded_config.get_default_scaff(), Some(&"test_pattern".to_string()));
+
+        std::env::set_current_dir(original_dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_scaff_config_clear_default() -> Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = TempDir::new()?;
+        let original_dir = std::env::current_dir()?;
+        std::env::set_current_dir(temp_dir.path())?;
+
+        // Create a pattern first
+        let pattern = create_test_pattern();
+        let scaff_dir = ScaffDirectory::new();
+        scaff_dir.save_pattern(&pattern)?;
+
+        let mut config = ScaffConfig::new();
+        config.set_default_scaff("test_pattern")?;
+        assert!(config.get_default_scaff().is_some());
+
+        config.clear_default_scaff()?;
+        assert!(config.get_default_scaff().is_none());
+
+        std::env::set_current_dir(original_dir)?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_set_nonexistent_default_scaff() -> Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = TempDir::new()?;
+        let original_dir = std::env::current_dir()?;
+        std::env::set_current_dir(temp_dir.path())?;
+
+        let mut config = ScaffConfig::new();
+        let result = config.set_default_scaff("nonexistent_pattern");
+        assert!(result.is_err());
 
         std::env::set_current_dir(original_dir)?;
         Ok(())

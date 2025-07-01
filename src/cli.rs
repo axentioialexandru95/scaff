@@ -1,5 +1,5 @@
 use crate::generator::CodeGenerator;
-use crate::pattern::{ScaffDirectory, create_pattern_from_scan, display_pattern_summary};
+use crate::pattern::{ScaffDirectory, ScaffConfig, create_pattern_from_scan, display_pattern_summary};
 use crate::scanner;
 use crate::validator::ArchitectureValidator;
 use clap::{Parser, Subcommand};
@@ -31,13 +31,48 @@ enum Commands {
     List {},
     /// Generate code from a scaff
     Generate {
-        scaff: String,
+        /// Scaff name (optional if default scaff is set)
+        scaff: Option<String>,
         /// Output directory for generated code
         #[arg(short, long, default_value = "generated")]
         output: String,
     },
     /// Validate codebase against a scaff
-    Validate { scaff: String },
+    Validate { 
+        /// Scaff name (optional if default scaff is set)
+        scaff: Option<String> 
+    },
+    /// Manage default scaff
+    Default {
+        #[command(subcommand)]
+        action: DefaultActions,
+    },
+}
+
+#[derive(Subcommand)]
+enum DefaultActions {
+    /// Set the default scaff
+    Set { scaff: String },
+    /// Get the current default scaff
+    Get {},
+    /// Clear the default scaff
+    Clear {},
+}
+
+fn resolve_scaff_name(scaff: Option<String>) -> Result<String, String> {
+    match scaff {
+        Some(name) => Ok(name),
+        None => {
+            let config = ScaffConfig::load().map_err(|e| format!("Failed to load config: {}", e))?;
+            match config.get_default_scaff() {
+                Some(default_scaff) => {
+                    println!("💡 Using default scaff: {}", default_scaff);
+                    Ok(default_scaff.clone())
+                }
+                None => Err("No scaff specified and no default scaff set. Use 'scaff default set <scaff-name>' to set a default, or specify a scaff name explicitly.".to_string()),
+            }
+        }
+    }
 }
 
 pub fn run() {
@@ -221,13 +256,21 @@ pub fn run() {
             Err(e) => println!("❌ Failed to list patterns: {}", e),
         },
         Commands::Generate { scaff, output } => {
+            let scaff_name = match resolve_scaff_name(scaff) {
+                Ok(name) => name,
+                Err(e) => {
+                    println!("❌ {}", e);
+                    return;
+                }
+            };
+
             println!(
                 "🏗️ Generating code from scaff: {} to directory: {}",
-                scaff, output
+                scaff_name, output
             );
 
             match CodeGenerator::new() {
-                Ok(generator) => match generator.generate_from_scaff(&scaff, &output) {
+                Ok(generator) => match generator.generate_from_scaff(&scaff_name, &output) {
                     Ok(_) => {
                         println!(
                             "💡 You can now explore the generated code in the '{}' directory",
@@ -243,7 +286,7 @@ pub fn run() {
                         if e.to_string().contains("No such file") {
                             println!(
                                 "💡 Make sure the scaff '{}' exists. Run 'scaff list' to see available scaffs.",
-                                scaff
+                                scaff_name
                             );
                         }
                     }
@@ -254,10 +297,18 @@ pub fn run() {
             }
         }
         Commands::Validate { scaff } => {
-            println!("🔍 Validating codebase against scaff: {}", scaff);
+            let scaff_name = match resolve_scaff_name(scaff) {
+                Ok(name) => name,
+                Err(e) => {
+                    println!("❌ {}", e);
+                    return;
+                }
+            };
+
+            println!("🔍 Validating codebase against scaff: {}", scaff_name);
 
             let validator = ArchitectureValidator::new();
-            match validator.validate_against_scaff(&scaff) {
+            match validator.validate_against_scaff(&scaff_name) {
                 Ok(result) => {
                     validator.display_validation_results(&result);
                 }
@@ -265,6 +316,61 @@ pub fn run() {
                     println!("❌ Validation failed: {}", e);
                     if e.to_string().contains("not found") {
                         println!("💡 Run 'scaff list' to see available scaffs.");
+                    }
+                }
+            }
+        }
+        Commands::Default { action } => {
+            match action {
+                DefaultActions::Set { scaff } => {
+                    println!("🔧 Setting default scaff: {}", scaff);
+                    let mut config = match ScaffConfig::load() {
+                        Ok(config) => config,
+                        Err(e) => {
+                            println!("❌ Failed to load config: {}", e);
+                            return;
+                        }
+                    };
+
+                    match config.set_default_scaff(&scaff) {
+                        Ok(_) => {
+                            println!("✅ Successfully set default scaff to '{}'", scaff);
+                            println!("💡 You can now use 'scaff generate' and 'scaff validate' without specifying a scaff name.");
+                        }
+                        Err(e) => {
+                            println!("❌ Failed to set default scaff: {}", e);
+                            println!("💡 Run 'scaff list' to see available scaffs.");
+                        }
+                    }
+                }
+                DefaultActions::Get {} => {
+                    match ScaffConfig::load() {
+                        Ok(config) => {
+                            if let Some(default_scaff) = config.get_default_scaff() {
+                                println!("� Current default scaff: {}", default_scaff);
+                            } else {
+                                println!("💡 No default scaff is currently set.");
+                                println!("💡 Use 'scaff default set <scaff-name>' to set one.");
+                            }
+                        }
+                        Err(e) => println!("❌ Failed to load config: {}", e),
+                    }
+                }
+                DefaultActions::Clear {} => {
+                    let mut config = match ScaffConfig::load() {
+                        Ok(config) => config,
+                        Err(e) => {
+                            println!("❌ Failed to load config: {}", e);
+                            return;
+                        }
+                    };
+
+                    match config.clear_default_scaff() {
+                        Ok(_) => {
+                            println!("✅ Successfully cleared default scaff");
+                            println!("💡 You'll need to specify scaff names explicitly for generate and validate commands.");
+                        }
+                        Err(e) => println!("❌ Failed to clear default scaff: {}", e),
                     }
                 }
             }
