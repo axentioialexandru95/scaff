@@ -1,0 +1,7 @@
+[env]
+RUST_LOG = "info"
+
+[alias]
+test-unit = "test --lib"
+test-integration = "test --test integration_tests"
+test-all = "test"

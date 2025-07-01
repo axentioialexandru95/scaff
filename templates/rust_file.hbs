@@ -1,0 +1,78 @@
+// Generated from scaff pattern: {{pattern_name}}
+// Original file: {{original_path}}
+
+use serde::{Deserialize, Serialize};
+use log::{info, warn, error, debug};
+
+{{#each structs}}
+/// {{this}} struct generated from pattern
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{this}} {
+    pub id: Option<u64>,
+    pub name: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    // TODO: Add specific fields for {{this}}
+}
+
+{{/each}}
+
+{{#each implementations}}
+impl {{this}} {
+    /// Create a new instance of {{this}}
+    pub fn new(name: String) -> Self {
+        {{this}} {
+            id: None,
+            name,
+            created_at: chrono::Utc::now(),
+        }
+    }
+    
+    /// Update the name of {{this}}
+    pub fn update_name(&mut self, new_name: String) {
+        info!("Updating {{this}} name from '{}' to '{}'", self.name, new_name);
+        self.name = new_name;
+    }
+    
+    /// Get the display name for {{this}}
+    pub fn display_name(&self) -> String {
+        format!("{{this}}: {}", self.name)
+    }
+}
+
+{{/each}}
+
+{{#each functions}}
+/// {{this}} function generated from pattern
+pub fn {{this}}() -> Result<(), Box<dyn std::error::Error>> {
+    info!("Executing {{this}} function");
+    
+    // TODO: Implement {{this}} logic here
+    println!("{{this}} function called");
+    
+    Ok(())
+}
+
+{{/each}}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    {{#each structs}}
+    #[test]
+    fn test_{{snake_case this}}_creation() {
+        let instance = {{this}}::new("Test {{this}}".to_string());
+        assert_eq!(instance.name, "Test {{this}}");
+        assert!(instance.id.is_none());
+    }
+    
+    {{/each}}
+    
+    {{#each functions}}
+    #[test]
+    fn test_{{snake_case this}}() {
+        assert!({{this}}().is_ok());
+    }
+    
+    {{/each}}
+} 

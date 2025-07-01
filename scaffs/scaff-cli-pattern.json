@@ -1,0 +1,72 @@
+{
+  "name": "scaff-cli-pattern",
+  "description": "Pattern with 7 files containing 5 total items",
+  "language": "Rust",
+  "files": [
+    {
+      "path": "./src/pattern.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [
+        "CodePattern",
+        "FilePattern",
+        "ScaffDirectory"
+      ],
+      "implementations": [
+        "ScaffDirectory"
+      ]
+    },
+    {
+      "path": "./src/plugins.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [],
+      "implementations": []
+    },
+    {
+      "path": "./src/validator.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [],
+      "implementations": []
+    },
+    {
+      "path": "./src/scanner.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [],
+      "implementations": []
+    },
+    {
+      "path": "./src/main.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [],
+      "implementations": []
+    },
+    {
+      "path": "./src/cli.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [
+        "Cli"
+      ],
+      "implementations": []
+    },
+    {
+      "path": "./src/generator.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [],
+      "implementations": []
+    }
+  ],
+  "created_at": "2025-07-01T11:48:36.193296+00:00"
+}

@@ -1,0 +1,9 @@
+
+[package]
+name = "complex-structure"
+version = "0.1.0"
+edition = "2021"
+
+# Generated from scaff pattern: complex-structure
+
+[dependencies]

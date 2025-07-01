@@ -1,0 +1,110 @@
+// Generated from scaff pattern: {{pattern_name}}
+// Original file: {{original_path}}
+
+{{#each classes}}
+/**
+ * {{this}} class generated from pattern
+ */
+export class {{this}} {
+    constructor(name = 'Default {{this}}') {
+        this.id = null;
+        this.name = name;
+        this.createdAt = new Date();
+        
+        console.log(`Created new {{this}}: ${name}`);
+    }
+    
+    /**
+     * Update the name of this {{this}}
+     * @param {string} newName - The new name
+     */
+    updateName(newName) {
+        console.log(`Updating {{this}} name from '${this.name}' to '${newName}'`);
+        this.name = newName;
+    }
+    
+    /**
+     * Get the display name for this {{this}}
+     * @returns {string} Formatted display name
+     */
+    getDisplayName() {
+        return `{{this}}: ${this.name}`;
+    }
+    
+    /**
+     * Convert to JSON representation
+     * @returns {object} JSON object
+     */
+    toJSON() {
+        return {
+            id: this.id,
+            name: this.name,
+            createdAt: this.createdAt,
+            type: '{{this}}'
+        };
+    }
+    
+    /**
+     * Create from JSON data
+     * @param {object} data - JSON data
+     * @returns {{{this}}} New instance
+     */
+    static fromJSON(data) {
+        const instance = new {{this}}(data.name);
+        instance.id = data.id;
+        instance.createdAt = new Date(data.createdAt);
+        return instance;
+    }
+}
+
+{{/each}}
+
+{{#each functions}}
+/**
+ * {{this}} function generated from pattern
+ * @returns {Promise<void>}
+ */
+export async function {{this}}() {
+    console.log('Executing {{this}} function');
+    
+    try {
+        // TODO: Implement {{this}} logic here
+        console.log('{{this}} function completed successfully');
+        return Promise.resolve();
+    } catch (error) {
+        console.error('Error in {{this}}:', error);
+        throw error;
+    }
+}
+
+{{/each}}
+
+// Utility functions
+export const utils = {
+    {{#each classes}}
+    /**
+     * Create a new {{this}} with validation
+     * @param {string} name - The name for the {{this}}
+     * @returns {{{this}}} New instance
+     */
+    create{{this}}(name) {
+        if (!name || typeof name !== 'string') {
+            throw new Error('Name is required and must be a string');
+        }
+        return new {{this}}(name);
+    },
+    
+    {{/each}}
+    
+    /**
+     * Log pattern information
+     */
+    logPatternInfo() {
+        console.log('Generated from pattern: {{pattern_name}}');
+        console.log('Classes: {{#each classes}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}');
+        console.log('Functions: {{#each functions}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}');
+    }
+};
+
+// Initialize pattern
+utils.logPatternInfo(); 

@@ -1,0 +1,48 @@
+{
+  "name": "complex-structure",
+  "description": "Pattern with 4 files containing 4 total items",
+  "language": "Rust",
+  "files": [
+    {
+      "path": "./tests/integration/api_tests.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [],
+      "implementations": []
+    },
+    {
+      "path": "./src/utils/helpers/string_utils.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [],
+      "implementations": []
+    },
+    {
+      "path": "./src/components/ui/Button.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [
+        "Button"
+      ],
+      "implementations": [
+        "Button"
+      ]
+    },
+    {
+      "path": "./src/services/auth/mod.rs",
+      "extension": "rs",
+      "classes": [],
+      "functions": [],
+      "structs": [
+        "AuthService"
+      ],
+      "implementations": [
+        "AuthService"
+      ]
+    }
+  ],
+  "created_at": "2025-07-01T12:08:11.053957+00:00"
+}
